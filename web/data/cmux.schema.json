@@ -303,6 +303,11 @@
           "default": true,
           "description": "When true, new workspaces inherit the current workspace working directory. When false, new workspaces leave the working directory unset so Ghostty's working-directory setting can provide the default."
         },
+        "defaultWorkspacePath": {
+          "type": "string",
+          "default": "",
+          "description": "Default working directory for new workspaces. Supports ~ and $VAR/${VAR} expansion. When set, it takes precedence over workspaceInheritWorkingDirectory (the inherited last-used directory). An invalid or nonexistent path falls back to the last-used directory (or the home directory). Leave empty to keep the inherited last-used behavior."
+        },
         "minimalMode": {
           "type": "boolean",
           "default": false,

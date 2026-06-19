@@ -1541,10 +1541,27 @@ class TabManager: ObservableObject {
     }
 
     func implicitWorkingDirectoryForNewWorkspace(from sourceWorkspace: Workspace?) -> String? {
-        guard settings.value(for: settingsCatalog.app.workspaceInheritWorkingDirectory) else {
-            return nil
+        let inheritedDirectory = settings.value(for: settingsCatalog.app.workspaceInheritWorkingDirectory)
+            ? preferredWorkingDirectoryForNewTab(workspace: sourceWorkspace)
+            : nil
+        let configuredDefault = settings.value(for: settingsCatalog.app.defaultWorkspacePath)
+        let resolution = NewWorkspaceWorkingDirectory.resolve(
+            configuredDefault: configuredDefault,
+            inheritedDirectory: inheritedDirectory,
+            homeDirectory: NSHomeDirectory(),
+            environment: ProcessInfo.processInfo.environment,
+            directoryExists: { path in
+                var isDirectory: ObjCBool = false
+                return FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory)
+                    && isDirectory.boolValue
+            }
+        )
+        if resolution.configuredPathInvalid {
+            cmuxDebugLog(
+                "newWorkspace.defaultWorkspacePath invalid configured=\(configuredDefault); falling back to last-used/home"
+            )
         }
-        return preferredWorkingDirectoryForNewTab(workspace: sourceWorkspace)
+        return resolution.directory
     }
 
     // MARK: - Reordering (WorkspaceReorderCoordinator, CmuxWorkspaces)
