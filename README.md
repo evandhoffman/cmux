@@ -142,6 +142,8 @@ Give a million developers composable primitives and they'll collectively find th
 
 For more info on how to configure cmux, [head over to our docs](https://cmux.com/docs/getting-started?utm_source=readme).
 
+**Building from source / contributing?** Start with [`docs/repository.md`](docs/repository.md) for the monorepo map, tech stack, architecture, and verified build/test commands, then [`CONTRIBUTING.md`](CONTRIBUTING.md) for the local macOS-app build loop. Agent build notes and pitfalls are in [`CLAUDE.md`](CLAUDE.md).
+
 ## Keyboard Shortcuts
 
 ### Workspaces
@@ -328,6 +330,8 @@ Read the full guide at <https://cmux.com/docs/session-restore>.
 </a>
 
 ## Contributing
+
+Building from source or changing the code? See [`CONTRIBUTING.md`](CONTRIBUTING.md) for setup and the local build loop, and [`docs/repository.md`](docs/repository.md) for the monorepo map and architecture.
 
 Ways to get involved:
 

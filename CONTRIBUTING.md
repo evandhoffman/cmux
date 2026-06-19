@@ -1,10 +1,14 @@
 # Contributing to cmux
 
+> **New here?** Read [`docs/repository.md`](docs/repository.md) for the whole-monorepo map (macOS/iOS apps, `web/` backend, `daemon/remote`, workers, packages), the tech stack, and where things live. Agent build notes and pitfalls live in [`CLAUDE.md`](CLAUDE.md) (`AGENTS.md` is a symlink to it); area-specific rules live in [`skills/`](skills/).
+
+This page covers macOS-app development. For the web/cloud backend see [`web/README.md`](web/README.md); for other components see their READMEs (`ios/`, `webviews/`, `workers/presence/`, `daemon/remote/`).
+
 ## Prerequisites
 
-- macOS 14+
-- Xcode 15+
-- [Zig](https://ziglang.org/) (install via `brew install zig`)
+- macOS (CI and releases build on macOS 15; macOS 26+ "Tahoe" is supported for development — see [Building on macOS 26+](#building-on-macos-26-tahoe))
+- Xcode 26.x — the toolchain is pinned in [`.xcode-version`](.xcode-version) (`26.0`)
+- [Zig](https://ziglang.org/) (install via `brew install zig`) — used to build `GhosttyKit.xcframework` and the Ghostty CLI helper
 
 ## Getting Started
 
@@ -20,25 +24,31 @@
    ```
 
    This will:
-   - Initialize git submodules (ghostty, homebrew-cmux)
-   - Build the GhosttyKit.xcframework from source
-   - Create the necessary symlinks
+   - Initialize git submodules (`ghostty`, `homebrew-cmux`, `vendor/bonsplit`)
+   - Build or reuse the cached `GhosttyKit.xcframework`
+   - Install the pbxproj-normalization pre-commit hook
 
 3. Build the debug app:
    ```bash
    ./scripts/reload.sh --tag my-feature
    ```
-   The script prints the `.app` path. Cmd-click to open, or pass `--launch` to open automatically.
+   The script prints the `App path:` line. Cmd-click to open, or pass `--launch` to open automatically. Always build through `reload.sh --tag <tag>`; never run a bare `xcodebuild` or open an untagged `cmux DEV.app` (untagged builds share the default debug socket/bundle ID and steal focus). See [`CLAUDE.md`](CLAUDE.md) for the tagged-build rationale and the `cmux-debug-cli.sh` dogfood helper.
+
+## Building on macOS 26+ (Tahoe)
+
+The pinned compiler **zig 0.15.2 cannot link the Ghostty CLI helper against the macOS 26 SDK**. `reload.sh` and `scripts/build-ghostty-cli-helper.sh` auto-detect macOS 26+ and skip that one zig build, emitting a Mach-O stub so the app still builds, signs, and runs (only the standalone `ghostty +<command>` passthrough is disabled). No env var is needed; force the real build with `CMUX_SKIP_ZIG_BUILD=0`. Detection lives in `scripts/lib/ghostty-cli-helper-skip.sh`. Background: [issue #3047](https://github.com/manaflow-ai/cmux/issues/3047).
 
 ## Development Scripts
 
 | Script | Description |
 |--------|-------------|
-| `./scripts/setup.sh` | One-time setup (submodules + xcframework) |
-| `./scripts/reload.sh` | Build Debug app (pass `--launch` to also open it) |
-| `./scripts/reloadp.sh` | Build and launch Release app |
-| `./scripts/reload2.sh` | Reload both Debug and Release |
-| `./scripts/rebuild.sh` | Clean rebuild |
+| `./scripts/setup.sh` | One-time setup (submodules + GhosttyKit + git hooks) |
+| `./scripts/reload.sh --tag <tag>` | Build Debug app (pass `--launch` to also open it) |
+| `./scripts/reloadp.sh` | Build and launch the Release app |
+| `./scripts/reloads.sh` | Build and launch an isolated "cmux STAGING" Release app |
+| `./scripts/reload2.sh --tag <tag>` | Reload both Debug and Release |
+| `./scripts/cleanup-dev-builds.sh` | Remove old tagged dev builds and sockets |
+| `CMUX_TAG=<tag> ./scripts/cmux-debug-cli.sh <cmd>` | Drive a tagged Debug build over its socket |
 
 ## Team dogfood setup
 
