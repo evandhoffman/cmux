@@ -22,6 +22,12 @@ By default, `reload.sh` builds but does **not** launch the app. The script print
 ./scripts/reload.sh --tag fix-zsh-autosuggestions --launch
 ```
 
+### Building on macOS 26+ (Tahoe)
+
+The pinned compiler **zig 0.15.2 cannot link the Ghostty CLI helper against the macOS 26 SDK** — its self-hosted Mach-O linker leaves every `libSystem` symbol undefined (`_abort`, `_getenv`, `_isatty`, `__availability_version_check`, …). CI and release builders run macOS 15, so this only trips on macOS 26+ dev machines (https://github.com/manaflow-ai/cmux/issues/3047).
+
+`reload.sh` and `build-ghostty-cli-helper.sh` **auto-detect macOS 26+ and skip the helper zig build**, emitting a non-functional Mach-O stub so the app still builds, signs, and runs. The detection lives in `scripts/lib/ghostty-cli-helper-skip.sh` (shared by both scripts and the Xcode "Run Script" build phase, so a bare `xcodebuild` also works). No env var is needed on a fresh checkout. The stub only disables the standalone `ghostty +<command>` CLI passthrough; the terminal itself uses GhosttyKit, not this helper. To force the real zig build anyway (e.g. once a macOS-26-capable zig is pinned), set `CMUX_SKIP_ZIG_BUILD=0`.
+
 `reload.sh` prints an `App path:` line with the absolute path to the built `.app`. Use that path to build a cmd-clickable `file://` URL. Steps:
 
 1. Grab the path from the `App path:` line in `reload.sh` output.

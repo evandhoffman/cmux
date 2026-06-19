@@ -18,6 +18,9 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 GHOSTTY_DIR="$REPO_ROOT/ghostty"
 ZIG_REQUIRED="${ZIG_REQUIRED:-0.15.2}"
 
+# shellcheck source=scripts/lib/ghostty-cli-helper-skip.sh
+source "$SCRIPT_DIR/lib/ghostty-cli-helper-skip.sh"
+
 OUTPUT_PATH=""
 TARGET_TRIPLE=""
 UNIVERSAL="false"
@@ -207,8 +210,19 @@ EOF
 # Allow CI to skip the Zig helper build where only a valid app bundle shape is
 # required. The stub is a Mach-O binary so architecture validation still checks
 # the bundle layout and slices instead of accepting a shell script placeholder.
+#
+# This also auto-skips on macOS 26+ where the pinned zig 0.15.2 cannot link the
+# helper (https://github.com/manaflow-ai/cmux/issues/3047), so a fresh checkout
+# builds via reload.sh OR a direct xcodebuild without any caller-side env setup.
+# Set CMUX_SKIP_ZIG_BUILD=0 to force the real zig build anyway.
+SKIP_ZIG_REASON=""
 if [[ "${CMUX_SKIP_ZIG_BUILD:-}" == "1" ]]; then
-  echo "Skipping zig CLI helper build (CMUX_SKIP_ZIG_BUILD=1)"
+  SKIP_ZIG_REASON="CMUX_SKIP_ZIG_BUILD=1"
+elif [[ "${CMUX_SKIP_ZIG_BUILD:-}" != "0" ]] && cmux_should_auto_skip_ghostty_zig_build "$ZIG_REQUIRED"; then
+  SKIP_ZIG_REASON="zig ${ZIG_REQUIRED} cannot link the CLI helper on macOS $(cmux_host_macos_major)+ (https://github.com/manaflow-ai/cmux/issues/3047); set CMUX_SKIP_ZIG_BUILD=0 to force"
+fi
+if [[ -n "$SKIP_ZIG_REASON" ]]; then
+  echo "Skipping zig CLI helper build: ${SKIP_ZIG_REASON}" >&2
   mkdir -p "$(dirname "$OUTPUT_PATH")"
   STUB_TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/cmux-ghostty-helper-stub.XXXXXX")"
   trap 'rm -rf "$STUB_TMP_DIR"' EXIT

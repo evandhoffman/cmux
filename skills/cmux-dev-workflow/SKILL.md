@@ -39,6 +39,12 @@ Run the setup script to initialize submodules, build GhosttyKit, and install the
 ./scripts/setup.sh
 ```
 
+## Building on macOS 26+ (Tahoe)
+
+The pinned compiler **zig 0.15.2 cannot link the Ghostty CLI helper against the macOS 26 SDK** — its self-hosted Mach-O linker leaves every `libSystem` symbol undefined. CI and release builders run macOS 15, so this only affects macOS 26+ dev machines (https://github.com/manaflow-ai/cmux/issues/3047).
+
+`reload.sh` and `build-ghostty-cli-helper.sh` auto-detect macOS 26+ via the shared `scripts/lib/ghostty-cli-helper-skip.sh` and skip the helper zig build, emitting a Mach-O stub so the app still builds and runs. A fresh checkout needs no env var. The stub only disables the standalone `ghostty +<command>` CLI passthrough; the terminal uses GhosttyKit, not this helper. Force the real zig build with `CMUX_SKIP_ZIG_BUILD=0`; force the skip anywhere (e.g. CI app-shape jobs) with `CMUX_SKIP_ZIG_BUILD=1`. The decision is unit-tested in `tests/test_ghostty_cli_helper_skip.sh` (wired into the `workflow-guard-tests` CI job).
+
 ## Xcode toolchain
 
 The team is pinned to Xcode 26.x. `.xcode-version` records the major; `cmux.xcodeproj/project.pbxproj` carries `objectVersion = 60`, which is what Xcode 26 writes by default. (objectVersion 77 is reserved for projects that adopt synchronized folder groups, which cmux does not use yet. Bumping to a different value requires a deliberate team decision.)

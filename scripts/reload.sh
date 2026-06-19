@@ -32,9 +32,20 @@ XCODEBUILD_STARTED=0
 XCODEBUILD_OUTPUT_VALID=0
 XCODEBUILD_CLEANED_OUTPUTS=0
 
+# shellcheck source=scripts/lib/ghostty-cli-helper-skip.sh
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" && pwd)/ghostty-cli-helper-skip.sh"
+
 should_skip_ghostty_cli_helper_zig_build() {
   if [[ "${CMUX_SKIP_ZIG_BUILD:-}" == "1" ]]; then
     AUTO_SKIP_ZIG_BUILD_REASON="CMUX_SKIP_ZIG_BUILD=1"
+    return 0
+  fi
+
+  # Auto-skip on macOS 26+, where the pinned zig 0.15.2 cannot link the helper
+  # (https://github.com/manaflow-ai/cmux/issues/3047). CMUX_SKIP_ZIG_BUILD=0
+  # forces the real zig build anyway.
+  if [[ "${CMUX_SKIP_ZIG_BUILD:-}" != "0" ]] && cmux_should_auto_skip_ghostty_zig_build; then
+    AUTO_SKIP_ZIG_BUILD_REASON="macOS $(cmux_host_macos_major)+ cannot link the pinned zig 0.15.2 CLI helper (issue #3047)"
     return 0
   fi
 
@@ -625,6 +636,7 @@ echo "==> reload starting (tag: ${TAG}, log: ${RELOAD_LOG})" >&3
 
 if should_skip_ghostty_cli_helper_zig_build; then
   export CMUX_SKIP_ZIG_BUILD=1
+  echo "==> Skipping Ghostty CLI helper zig build: ${AUTO_SKIP_ZIG_BUILD_REASON}" >&3
 fi
 
 XCODEBUILD_ARGS=(
