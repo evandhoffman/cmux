@@ -23,26 +23,53 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 cd "$PROJECT_DIR"
 
-# Building needs a full Xcode, not just the Command Line Tools. Without it the
-# build fails deep inside reload.sh with a cryptic xcode-select error, so check
-# up front and tell the user exactly what to do.
-if ! /usr/bin/xcodebuild -version >/dev/null 2>&1; then
-  active_dir="$(/usr/bin/xcode-select -p 2>/dev/null || true)"
-  {
-    echo "error: building cmux requires a full Xcode, but 'xcodebuild' is not usable."
-    echo "  active developer directory: ${active_dir:-<unset>}"
+# Preflight: verify every build prerequisite is in place before doing any work,
+# and report all problems at once (not just the first) with the exact fix.
+preflight() {
+  local problems=0
+
+  # macOS — cmux is a native macOS app; it only builds on Darwin.
+  if [ "$(uname -s)" != "Darwin" ]; then
+    printf '  - cmux builds only on macOS (detected: %s)\n' "$(uname -s)" >&2
+    problems=$((problems + 1))
+  fi
+
+  # Full Xcode — xcodebuild requires Xcode, not just the Command Line Tools.
+  if ! /usr/bin/xcodebuild -version >/dev/null 2>&1; then
+    local active_dir
+    active_dir="$(/usr/bin/xcode-select -p 2>/dev/null || true)"
+    printf '  - full Xcode required; xcodebuild is unusable (active dir: %s)\n' "${active_dir:-<unset>}" >&2
     if [ -d /Applications/Xcode.app ]; then
-      echo "  Xcode is installed but not selected. Point the toolchain at it:"
-      echo "    sudo xcode-select -s /Applications/Xcode.app/Contents/Developer"
+      printf '      Xcode is installed but not selected:\n        sudo xcode-select -s /Applications/Xcode.app/Contents/Developer\n' >&2
     else
-      echo "  Install Xcode 26.x (Mac App Store or https://xcodes.app), open it once"
-      echo "  to accept the license, then select it:"
-      echo "    sudo xcode-select -s /Applications/Xcode.app/Contents/Developer"
+      printf '      Install Xcode 26.x (Mac App Store or https://xcodes.app), open it once to\n      accept the license, then:  sudo xcode-select -s /Applications/Xcode.app/Contents/Developer\n' >&2
     fi
-    echo "  (The Command Line Tools alone cannot run xcodebuild.)"
-  } >&2
-  exit 1
-fi
+    problems=$((problems + 1))
+  fi
+
+  # Zig — used to build/cache GhosttyKit and the Ghostty CLI helper.
+  if ! command -v zig >/dev/null 2>&1; then
+    printf '  - zig not found:  brew install zig\n' >&2
+    problems=$((problems + 1))
+  fi
+
+  # Git — required to fetch the submodules (ghostty, bonsplit, homebrew-cmux).
+  if ! command -v git >/dev/null 2>&1; then
+    printf '  - git not found (install the Xcode Command Line Tools, or: brew install git)\n' >&2
+    problems=$((problems + 1))
+  fi
+
+  if [ "$problems" -gt 0 ]; then
+    printf 'error: %d build prerequisite(s) missing — aborting before any work.\n' "$problems" >&2
+    exit 1
+  fi
+
+  printf '==> Preflight OK (%s, zig %s, git present)\n' \
+    "$(/usr/bin/xcodebuild -version 2>/dev/null | head -1 || true)" \
+    "$(zig version 2>/dev/null || true)"
+}
+
+preflight
 
 # One-time setup (idempotent): initialize submodules, build/cache
 # GhosttyKit.xcframework, and install the pbxproj pre-commit hook. Re-running is
