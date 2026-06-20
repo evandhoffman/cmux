@@ -332,10 +332,12 @@ jobs:
 
   tests:
     needs: changes
-    if: ${{ needs.changes.outputs.macos == 'true' }}
     # App-host XCTest needs a runner that can broker testmanagerd control
-    # sessions. Keep this job on the hosted GUI-capable pool until the
-    # MACOS_RUNNER_15/Austin runner-infra issue is fixed separately.
+    # sessions on a hosted macOS-15 GUI pool; the self-hosted macOS-26 runner
+    # cannot. Disabled by default on this fork. To re-enable (with a
+    # warp-macos-15 runner available), set repository variable
+    # RUN_APP_HOST_TESTS=true.
+    if: ${{ needs.changes.outputs.macos == 'true' && vars.RUN_APP_HOST_TESTS == 'true' }}
     runs-on: warp-macos-15-arm64-6x
     timeout-minutes: 75
     env:
