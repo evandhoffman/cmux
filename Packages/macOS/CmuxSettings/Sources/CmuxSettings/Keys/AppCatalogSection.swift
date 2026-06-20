@@ -46,6 +46,16 @@ public struct AppCatalogSection: SettingCatalogSection {
         userDefaultsKey: "workspaceInheritWorkingDirectory"
     )
 
+    /// Optional pinned default directory for new workspaces. Empty preserves the
+    /// existing inherited "last used" behavior. Supports `~` and `$VAR`/`${VAR}`
+    /// expansion; when set it takes precedence over inheritance, and an invalid
+    /// path falls back to the last-used directory (else `~`).
+    public let defaultWorkspacePath = DefaultsKey<String>(
+        id: "app.defaultWorkspacePath",
+        defaultValue: "",
+        userDefaultsKey: "defaultWorkspacePath"
+    )
+
     public let presentationMode = DefaultsKey<WorkspacePresentationMode>(
         id: "app.minimalMode",
         defaultValue: .standard,

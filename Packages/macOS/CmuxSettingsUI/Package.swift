@@ -15,12 +15,14 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../CmuxSettings"),
+        .package(path: "../CmuxFoundation"),
     ],
     targets: [
         .target(
             name: "CmuxSettingsUI",
             dependencies: [
                 .product(name: "CmuxSettings", package: "CmuxSettings"),
+                .product(name: "CmuxFoundation", package: "CmuxFoundation"),
             ]
         ),
         .testTarget(

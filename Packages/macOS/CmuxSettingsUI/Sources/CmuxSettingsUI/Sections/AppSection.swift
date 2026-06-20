@@ -1,4 +1,5 @@
 import AppKit
+import CmuxFoundation
 import CmuxSettings
 import SwiftUI
 import UniformTypeIdentifiers
@@ -33,6 +34,7 @@ public struct AppSection: View {
     @State private var firstClick: DefaultsValueModel<Bool>
     @State private var fileDrop: DefaultsValueModel<FileDropDefaultBehavior>
     @State private var preferredEditor: DefaultsValueModel<String>
+    @State private var defaultWorkspacePath: DefaultsValueModel<String>
     @State private var openSupported: DefaultsValueModel<Bool>
     @State private var openMarkdown: DefaultsValueModel<Bool>
     @State private var markdownFontSize: DefaultsValueModel<Int>
@@ -79,6 +81,7 @@ public struct AppSection: View {
         _firstClick = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.app.focusPaneOnFirstClick))
         _fileDrop = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.app.fileDropDefaultBehavior))
         _preferredEditor = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.app.preferredEditor))
+        _defaultWorkspacePath = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.app.defaultWorkspacePath))
         _openSupported = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.app.openSupportedFilesInCmux))
         _openMarkdown = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.app.openMarkdownInCmuxViewer))
         _markdownFontSize = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.markdown.fontSize))
@@ -126,7 +129,7 @@ public struct AppSection: View {
             mainCard
         }
         .task {
-            startSettingsObservation([language, appearance, appIcon, placement, inheritDir, minimalMode, keepWorkspaceOpen, firstClick, fileDrop, preferredEditor, openSupported, openMarkdown, markdownFontSize, markdownFontFamily, markdownMaxWidth, canvasPaneGap, canvasSnapping, fileEditorWordWrap, iMessage, reorder, dockBadge, menuBarOnly, showInMenuBar, paneRing, paneFlash, soundName, soundCommand, customSoundFile, telemetry, confirmQuit, warnCloseTab, warnCloseX, hideCloseButton, renameSelects, paletteAllSurfaces])
+            startSettingsObservation([language, appearance, appIcon, placement, inheritDir, minimalMode, keepWorkspaceOpen, firstClick, fileDrop, preferredEditor, defaultWorkspacePath, openSupported, openMarkdown, markdownFontSize, markdownFontFamily, markdownMaxWidth, canvasPaneGap, canvasSnapping, fileEditorWordWrap, iMessage, reorder, dockBadge, menuBarOnly, showInMenuBar, paneRing, paneFlash, soundName, soundCommand, customSoundFile, telemetry, confirmQuit, warnCloseTab, warnCloseX, hideCloseButton, renameSelects, paletteAllSurfaces])
             if languageAtAppear == nil { languageAtAppear = language.current }; if telemetryAtAppear == nil { telemetryAtAppear = telemetry.current }
         }
     }
@@ -200,6 +203,39 @@ public struct AppSection: View {
                     .labelsHidden()
                     .controlSize(.small)
                     .accessibilityIdentifier("SettingsWorkspaceInheritWorkingDirectoryToggle")
+            }
+            SettingsCardDivider()
+
+            // Default Workspace Directory
+            SettingsCardRow(
+                configurationReview: .json("app.defaultWorkspacePath"),
+                String(localized: "settings.app.defaultWorkspacePath", defaultValue: "Default Workspace Directory"),
+                subtitle: String(localized: "settings.app.defaultWorkspacePath.subtitle", defaultValue: "New workspaces open here instead of inheriting the current workspace's directory. Supports ~ and environment variables. Leave empty to use the last-used directory.")
+            ) {
+                VStack(alignment: .trailing, spacing: 6) {
+                    TextField(
+                        String(localized: "settings.app.defaultWorkspacePath.placeholder", defaultValue: "e.g. ~/workspace"),
+                        text: Binding(get: { defaultWorkspacePath.current }, set: { defaultWorkspacePath.set($0) })
+                    )
+                    .textFieldStyle(.roundedBorder)
+                    .frame(width: 200)
+                    .accessibilityIdentifier("SettingsDefaultWorkspacePathField")
+
+                    if let warning = defaultWorkspacePathWarning {
+                        HStack(alignment: .firstTextBaseline, spacing: 6) {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.caption)
+                                .foregroundStyle(.orange)
+                            Text(warning)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .multilineTextAlignment(.leading)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .frame(width: 200, alignment: .leading)
+                        .accessibilityIdentifier("SettingsDefaultWorkspacePathWarning")
+                    }
+                }
             }
             SettingsCardDivider()
 
@@ -827,6 +863,28 @@ public struct AppSection: View {
                 defaultValue: "Append new workspaces to the bottom of the list."
             )
         }
+    }
+
+    /// Non-blocking warning shown under the Default Workspace Directory field
+    /// when the configured path (after `~`/`$VAR` expansion) is not an existing
+    /// directory. Uses the same expansion as the runtime resolver so the UI and
+    /// new-workspace behavior agree. `nil` when empty or valid.
+    private var defaultWorkspacePathWarning: String? {
+        let raw = defaultWorkspacePath.current.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !raw.isEmpty else { return nil }
+        let expanded = NewWorkspaceWorkingDirectory.expand(
+            raw,
+            homeDirectory: NSHomeDirectory(),
+            environment: ProcessInfo.processInfo.environment
+        )
+        var isDirectory: ObjCBool = false
+        let exists = FileManager.default.fileExists(atPath: expanded, isDirectory: &isDirectory)
+            && isDirectory.boolValue
+        guard !exists else { return nil }
+        return String(
+            localized: "settings.app.defaultWorkspacePath.invalidWarning",
+            defaultValue: "Not an existing folder. New workspaces use the last-used directory until this is fixed."
+        )
     }
 
     private func fileDropSubtitle(_ behavior: FileDropDefaultBehavior) -> String {
