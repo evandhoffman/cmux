@@ -85,6 +85,8 @@ It is a polyglot monorepo. The macOS and iOS apps are the primary product; the o
 
 ## Quick start (build the macOS app from source)
 
+> Just want to build and run it? See the focused [**building quick start**](building.md).
+
 One command, no flags — runs setup and builds an isolated Debug app (tag `local`), then prints an `App path:` line to cmd-click:
 
 ```bash
