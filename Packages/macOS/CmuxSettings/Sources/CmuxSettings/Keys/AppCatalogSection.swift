@@ -56,6 +56,16 @@ public struct AppCatalogSection: SettingCatalogSection {
         userDefaultsKey: "defaultWorkspacePath"
     )
 
+    /// When false, cmux does not automatically restore the previous launch's
+    /// windows, workspaces, and terminal content on startup; each launch opens a
+    /// fresh workspace instead. The explicit "Restore Previous Launch" command is
+    /// unaffected. Defaults to `true` (the historical always-restore behavior).
+    public let restorePreviousSession = DefaultsKey<Bool>(
+        id: "app.restorePreviousSession",
+        defaultValue: true,
+        userDefaultsKey: "restorePreviousSession"
+    )
+
     public let presentationMode = DefaultsKey<WorkspacePresentationMode>(
         id: "app.minimalMode",
         defaultValue: .standard,

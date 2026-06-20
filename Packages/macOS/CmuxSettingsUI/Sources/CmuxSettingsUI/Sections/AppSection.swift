@@ -35,6 +35,7 @@ public struct AppSection: View {
     @State private var fileDrop: DefaultsValueModel<FileDropDefaultBehavior>
     @State private var preferredEditor: DefaultsValueModel<String>
     @State private var defaultWorkspacePath: DefaultsValueModel<String>
+    @State private var restorePreviousSession: DefaultsValueModel<Bool>
     @State private var openSupported: DefaultsValueModel<Bool>
     @State private var openMarkdown: DefaultsValueModel<Bool>
     @State private var markdownFontSize: DefaultsValueModel<Int>
@@ -82,6 +83,7 @@ public struct AppSection: View {
         _fileDrop = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.app.fileDropDefaultBehavior))
         _preferredEditor = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.app.preferredEditor))
         _defaultWorkspacePath = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.app.defaultWorkspacePath))
+        _restorePreviousSession = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.app.restorePreviousSession))
         _openSupported = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.app.openSupportedFilesInCmux))
         _openMarkdown = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.app.openMarkdownInCmuxViewer))
         _markdownFontSize = State(initialValue: DefaultsValueModel(store: defaultsStore, key: catalog.markdown.fontSize))
@@ -129,7 +131,7 @@ public struct AppSection: View {
             mainCard
         }
         .task {
-            startSettingsObservation([language, appearance, appIcon, placement, inheritDir, minimalMode, keepWorkspaceOpen, firstClick, fileDrop, preferredEditor, defaultWorkspacePath, openSupported, openMarkdown, markdownFontSize, markdownFontFamily, markdownMaxWidth, canvasPaneGap, canvasSnapping, fileEditorWordWrap, iMessage, reorder, dockBadge, menuBarOnly, showInMenuBar, paneRing, paneFlash, soundName, soundCommand, customSoundFile, telemetry, confirmQuit, warnCloseTab, warnCloseX, hideCloseButton, renameSelects, paletteAllSurfaces])
+            startSettingsObservation([language, appearance, appIcon, placement, inheritDir, minimalMode, keepWorkspaceOpen, firstClick, fileDrop, preferredEditor, defaultWorkspacePath, restorePreviousSession, openSupported, openMarkdown, markdownFontSize, markdownFontFamily, markdownMaxWidth, canvasPaneGap, canvasSnapping, fileEditorWordWrap, iMessage, reorder, dockBadge, menuBarOnly, showInMenuBar, paneRing, paneFlash, soundName, soundCommand, customSoundFile, telemetry, confirmQuit, warnCloseTab, warnCloseX, hideCloseButton, renameSelects, paletteAllSurfaces])
             if languageAtAppear == nil { languageAtAppear = language.current }; if telemetryAtAppear == nil { telemetryAtAppear = telemetry.current }
         }
     }
@@ -236,6 +238,19 @@ public struct AppSection: View {
                         .accessibilityIdentifier("SettingsDefaultWorkspacePathWarning")
                     }
                 }
+            }
+            SettingsCardDivider()
+
+            // Restore Previous Session
+            SettingsCardRow(
+                configurationReview: .json("app.restorePreviousSession"),
+                String(localized: "settings.app.restorePreviousSession", defaultValue: "Restore Previous Session"),
+                subtitle: String(localized: "settings.app.restorePreviousSession.subtitle", defaultValue: "Reopen the previous launch's windows, workspaces, and terminal content on startup. Turn off to start each launch with a fresh workspace. The Restore Previous Launch command still works.")
+            ) {
+                Toggle("", isOn: Binding(get: { restorePreviousSession.current }, set: { restorePreviousSession.set($0) }))
+                    .labelsHidden()
+                    .controlSize(.small)
+                    .accessibilityIdentifier("SettingsRestorePreviousSessionToggle")
             }
             SettingsCardDivider()
 

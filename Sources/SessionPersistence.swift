@@ -154,10 +154,32 @@ enum SessionRestorePolicy {
         return false
     }
 
+    /// UserDefaults key backing `app.restorePreviousSession` (mirrors
+    /// `AppCatalogSection.restorePreviousSession.userDefaultsKey`). Kept as a
+    /// literal so this file need not depend on CmuxSettings, matching the
+    /// `AgentSessionAutoResumeSettings` pattern.
+    static let restorePreviousSessionDefaultsKey = "restorePreviousSession"
+
+    /// Reads `app.restorePreviousSession`, defaulting to `true` when unset so
+    /// the historical always-restore behavior is preserved.
+    static func restorePreviousSessionEnabled(defaults: UserDefaults = .standard) -> Bool {
+        guard defaults.object(forKey: restorePreviousSessionDefaultsKey) != nil else {
+            return true
+        }
+        return defaults.bool(forKey: restorePreviousSessionDefaultsKey)
+    }
+
     static func shouldAttemptRestore(
         arguments: [String] = CommandLine.arguments,
-        environment: [String: String] = ProcessInfo.processInfo.environment
+        environment: [String: String] = ProcessInfo.processInfo.environment,
+        restorePreviousSessionEnabled: Bool = SessionRestorePolicy.restorePreviousSessionEnabled()
     ) -> Bool {
+        // User opted out of automatic restore (Settings → App, or
+        // `app.restorePreviousSession: false` in cmux.json). The explicit
+        // "Restore Previous Launch" command still works — it does not call here.
+        if !restorePreviousSessionEnabled {
+            return false
+        }
         if environment["CMUX_DISABLE_SESSION_RESTORE"] == "1" {
             return false
         }

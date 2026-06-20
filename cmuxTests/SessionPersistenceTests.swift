@@ -6314,4 +6314,47 @@ extension SessionPersistenceTests {
         XCTAssertNil(MarkdownPanelFileLinkResolver.resolve(rawPath: "notes.txt", relativeToMarkdownFile: openedFile.path))
         XCTAssertNil(MarkdownPanelFileLinkResolver.resolve(rawPath: "https://example.com/notes.md", relativeToMarkdownFile: openedFile.path))
     }
+
+    // MARK: - app.restorePreviousSession
+
+    func testRestorePreviousSessionEnabledDefaultsToTrueWhenUnset() throws {
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: "cmux-restore-pref-\(UUID().uuidString)"))
+        defer { defaults.removeObject(forKey: SessionRestorePolicy.restorePreviousSessionDefaultsKey) }
+
+        XCTAssertNil(defaults.object(forKey: SessionRestorePolicy.restorePreviousSessionDefaultsKey))
+        XCTAssertTrue(SessionRestorePolicy.restorePreviousSessionEnabled(defaults: defaults))
+    }
+
+    func testRestorePreviousSessionEnabledReflectsStoredValue() throws {
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: "cmux-restore-pref-\(UUID().uuidString)"))
+        defer { defaults.removeObject(forKey: SessionRestorePolicy.restorePreviousSessionDefaultsKey) }
+
+        defaults.set(false, forKey: SessionRestorePolicy.restorePreviousSessionDefaultsKey)
+        XCTAssertFalse(SessionRestorePolicy.restorePreviousSessionEnabled(defaults: defaults))
+
+        defaults.set(true, forKey: SessionRestorePolicy.restorePreviousSessionDefaultsKey)
+        XCTAssertTrue(SessionRestorePolicy.restorePreviousSessionEnabled(defaults: defaults))
+    }
+
+    func testShouldAttemptRestoreSkipsWhenRestorePreviousSessionDisabled() {
+        // Even with an otherwise-restorable launch (no extra args, no test env),
+        // the user opting out of restore must short-circuit to no restore.
+        XCTAssertFalse(
+            SessionRestorePolicy.shouldAttemptRestore(
+                arguments: ["cmux"],
+                environment: [:],
+                restorePreviousSessionEnabled: false
+            )
+        )
+    }
+
+    func testShouldAttemptRestoreProceedsWhenRestorePreviousSessionEnabled() {
+        XCTAssertTrue(
+            SessionRestorePolicy.shouldAttemptRestore(
+                arguments: ["cmux"],
+                environment: [:],
+                restorePreviousSessionEnabled: true
+            )
+        )
+    }
 }

@@ -308,6 +308,11 @@
           "default": "",
           "description": "Default working directory for new workspaces. Supports ~ and $VAR/${VAR} expansion. When set, it takes precedence over workspaceInheritWorkingDirectory (the inherited last-used directory). An invalid or nonexistent path falls back to the last-used directory (or the home directory). Leave empty to keep the inherited last-used behavior."
         },
+        "restorePreviousSession": {
+          "type": "boolean",
+          "default": true,
+          "description": "When true, cmux restores the previous launch's windows, workspaces, and terminal content on startup. Set false to start each launch with a fresh workspace (the explicit 'Restore Previous Launch' command still works)."
+        },
         "minimalMode": {
           "type": "boolean",
           "default": false,

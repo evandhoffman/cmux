@@ -66,6 +66,7 @@ extension CmuxSettingsFileStore {
                     "forkConversationDefaultDestination": AgentConversationForkDefaultSettings.defaultDestination.rawValue,
                     "workspaceInheritWorkingDirectory": SettingCatalog().app.workspaceInheritWorkingDirectory.defaultValue,
                     "defaultWorkspacePath": SettingCatalog().app.defaultWorkspacePath.defaultValue,
+                    "restorePreviousSession": SettingCatalog().app.restorePreviousSession.defaultValue,
                     "minimalMode": false,
                     "keepWorkspaceOpenWhenClosingLastSurface": !SettingCatalog().app.keepWorkspaceOpenWhenClosingLastSurface.defaultValue,
                     "focusPaneOnFirstClick": PaneFirstClickFocusSettings.defaultEnabled,

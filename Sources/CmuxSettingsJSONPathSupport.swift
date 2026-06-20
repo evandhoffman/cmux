@@ -131,6 +131,10 @@ enum AppSettingsFileMapping {
             jsonKey: "commandPaletteSearchesAllSurfaces",
             defaultsKey: app.commandPaletteSearchesAllSurfaces.userDefaultsKey
         ),
+        .init(
+            jsonKey: "restorePreviousSession",
+            defaultsKey: app.restorePreviousSession.userDefaultsKey
+        ),
     ]
 
     static let stringSettings: [SettingsFileStringMapping] = [

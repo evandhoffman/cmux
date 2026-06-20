@@ -64,6 +64,25 @@ Pins the default working directory for new workspaces instead of always using th
 
 Editable in **Settings → General → Default Workspace Directory**.
 
+## `app.restorePreviousSession`
+
+Controls whether cmux automatically restores the previous launch on startup — its windows, workspaces, working directories, and terminal content.
+
+```json
+{
+  "app": {
+    "restorePreviousSession": false
+  }
+}
+```
+
+- `true` (the default) preserves the historical behavior: reopening cmux brings back exactly where you left off.
+- `false` starts every launch with a single fresh workspace (seeded by `app.defaultWorkspacePath`), so reopening the app no longer replays the previous session's terminals.
+- The explicit **Restore Previous Launch** command (File menu, Command Palette, and its keyboard shortcut) is unaffected — you can still pull back the last session on demand.
+- Equivalent to launching with the `CMUX_DISABLE_SESSION_RESTORE=1` environment variable, but persisted.
+
+Editable in **Settings → General → Restore Previous Session**.
+
 ## `terminal.agentHibernation`
 
 Opt-in Agent Hibernation. cmux kills idle background agent processes to free RAM and CPU, then resumes each one with its saved session when you visit its tab. See [agent-hooks.md](agent-hooks.md#agent-hibernation) for the full behavior, including the confirmation settle window and how resume works.
