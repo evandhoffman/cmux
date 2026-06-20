@@ -23,6 +23,27 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 cd "$PROJECT_DIR"
 
+# Building needs a full Xcode, not just the Command Line Tools. Without it the
+# build fails deep inside reload.sh with a cryptic xcode-select error, so check
+# up front and tell the user exactly what to do.
+if ! /usr/bin/xcodebuild -version >/dev/null 2>&1; then
+  active_dir="$(/usr/bin/xcode-select -p 2>/dev/null || true)"
+  {
+    echo "error: building cmux requires a full Xcode, but 'xcodebuild' is not usable."
+    echo "  active developer directory: ${active_dir:-<unset>}"
+    if [ -d /Applications/Xcode.app ]; then
+      echo "  Xcode is installed but not selected. Point the toolchain at it:"
+      echo "    sudo xcode-select -s /Applications/Xcode.app/Contents/Developer"
+    else
+      echo "  Install Xcode 26.x (Mac App Store or https://xcodes.app), open it once"
+      echo "  to accept the license, then select it:"
+      echo "    sudo xcode-select -s /Applications/Xcode.app/Contents/Developer"
+    fi
+    echo "  (The Command Line Tools alone cannot run xcodebuild.)"
+  } >&2
+  exit 1
+fi
+
 # One-time setup (idempotent): initialize submodules, build/cache
 # GhosttyKit.xcframework, and install the pbxproj pre-commit hook. Re-running is
 # cheap — initialized submodules and a warm GhosttyKit cache are no-ops.
