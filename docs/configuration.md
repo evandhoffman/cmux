@@ -45,6 +45,25 @@ Values: `right`, `left`, `top`, `bottom`, `newTab`, `newWorkspace`.
 
 Default: `right`.
 
+## `app.defaultWorkspacePath`
+
+Pins the default working directory for new workspaces instead of always using the current workspace's directory.
+
+```json
+{
+  "app": {
+    "defaultWorkspacePath": "~/workspace"
+  }
+}
+```
+
+- Supports `~` and `$VAR` / `${VAR}` expansion.
+- When set, it takes precedence over `app.workspaceInheritWorkingDirectory` (the inherited last-used directory).
+- If the configured path does not resolve to an existing directory, cmux falls back to the last-used directory (or the home directory) and logs a non-blocking warning.
+- Leave empty (the default) to keep the inherited last-used behavior.
+
+Editable in **Settings → General → Default Workspace Directory**.
+
 ## `terminal.agentHibernation`
 
 Opt-in Agent Hibernation. cmux kills idle background agent processes to free RAM and CPU, then resumes each one with its saved session when you visit its tab. See [agent-hooks.md](agent-hooks.md#agent-hibernation) for the full behavior, including the confirmation settle window and how resume works.
